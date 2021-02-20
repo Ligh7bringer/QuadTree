@@ -4,22 +4,30 @@
 
 #include <SFML/Graphics/RenderWindow.hpp>
 
-#include "Body.hpp"
-#include "Quad.hpp"
+#include "Boundary.hpp"
+#include "Node.hpp"
 
+template <typename T, int NodeCapacity = 1>
 class QuadTree
 {
-	std::unique_ptr<Quad> root_;
+	std::unique_ptr<Node<T, NodeCapacity>> root_;
 
 public:
 	QuadTree() = delete;
 
-	QuadTree(const Vec2<float> root_centre, const Vec2<float>& root_size)
+	explicit QuadTree(const Boundary& bound) { root_.reset(new Node<T, NodeCapacity>(bound)); }
+
+	void insert(const Boundary& bound, const T& value) { root_->insert(bound, value); }
+
+	template <typename Func>
+	void for_each_value(Func&& func)
 	{
-		root_.reset(new Quad(root_centre, root_size));
+		root_->for_each_value(func);
 	}
 
-	void insert(std::shared_ptr<Body> body) { root_->insert(body); }
-
-	void render(sf::RenderWindow& window) { root_->render(window); }
+	template <typename Func>
+	void for_each_node(Func&& func)
+	{
+		root_->for_each_node(func);
+	}
 };

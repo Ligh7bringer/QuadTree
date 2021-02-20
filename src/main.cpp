@@ -2,10 +2,14 @@
 #include <memory>
 #include <random>
 
+#include <SFML/Graphics/CircleShape.hpp>
+#include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
 
 #include "Body.hpp"
+#include "Boundary.hpp"
+#include "Node.hpp"
 #include "QuadTree.hpp"
 #include "Util.hpp"
 
@@ -23,19 +27,7 @@ int main()
 	view.setViewport(sf::FloatRect(0.f, 0.f, 1.f, 1.f));
 	window.setView(view);
 
-	QuadTree tree(window_size / 2.f, window_size / 2.f);
-
-	// std::random_device rd{};
-	// std::mt19937 gen(rd());
-	// std::uniform_real_distribution<float> width_distr(0.f, window_size.x);
-	// std::uniform_real_distribution<float> height_distr(0.f, window_size.y);
-
-	// for(size_t i = 0; i < 1000; ++i)
-	// {
-	// 	auto body = std::make_shared<Body>(
-	// 		Vec2<float>(width_distr(gen), height_distr(gen)), Vec2<float>(10.f, 10.f), 10.f);
-	// 	tree.insert(body);
-	// }
+	QuadTree<Body, 1> tree(Boundary(window_size / 2.f, window_size / 2.f));
 
 	while(window.isOpen())
 	{
@@ -53,18 +45,37 @@ int main()
 			{
 				if(event.mouseButton.button == sf::Mouse::Left)
 				{
-					auto body = std::make_shared<Body>(
-						Vec2<float>(event.mouseButton.x, event.mouseButton.y),
-						Vec2<float>(10.f, 10.f),
-						10.f);
-					tree.insert(body);
+					const Boundary bound(Vec2<float>(event.mouseButton.x, event.mouseButton.y),
+										 Vec2<float>(5.f, 5.f));
+					const Body body(Vec2<float>(event.mouseButton.x, event.mouseButton.y),
+									Vec2<float>(10.f, 10.f),
+									10.f);
+					tree.insert(bound, body);
 				}
 			}
 		}
 
 		window.clear(sf::Color::Black);
 
-		tree.render(window);
+		tree.for_each_node([&](auto node) -> void {
+			const auto& bound = node->boundary();
+			auto sprite = sf::RectangleShape({bound.size().x * 2.f, bound.size().y * 2.f});
+			sprite.setFillColor(sf::Color::Transparent);
+			sprite.setOutlineThickness(-2.f);
+			sprite.setOutlineColor(sf::Color::White);
+			sprite.setPosition({bound.centre().x, bound.centre().y});
+			sprite.setOrigin(sprite.getSize().x / 2, sprite.getSize().y / 2);
+			window.draw(sprite);
+		});
+
+		tree.for_each_value([&](const Boundary& bound, const auto& value) -> void {
+			(void)value;
+			auto sprite = sf::CircleShape(5.f);
+			sprite.setFillColor(sf::Color::Yellow);
+			sprite.setPosition({bound.centre().x, bound.centre().y});
+			sprite.setOrigin({sprite.getRadius() / 2.f, sprite.getRadius() / 2.f});
+			window.draw(sprite);
+		});
 
 		window.setView(view);
 		window.display();

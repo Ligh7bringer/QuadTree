@@ -1,12 +1,18 @@
 #pragma once
 
-#include <stdexcept>
+#include <cmath>
+#include <iostream>
 #include <string>
 
-#define UNIMPL_FAIL()                                                                              \
-	throw std::runtime_error("Unimplemented function " + std::string(__PRETTY_FUNCTION__) +        \
-							 "\n\tline: " + std::to_string(__LINE__) +                             \
-							 "\tfile: " + std::string(__FILE__))
+#ifdef _MSC_VER
+#	define CURR_FUNCTION __FUNCTION__ // or __FUNCSIG__
+#else
+#	define CURR_FUNCTION __PRETTY_FUNCTION__
+#endif
+
+#define STUB()                                                                                     \
+	std::cout << "Stub: " << std::string(CURR_FUNCTION) << " (" << std::string(__FILE__) << ":"    \
+			  << std::to_string(__LINE__) << ")\n"
 
 #define DEF_VALUE_GETTER(TYPE, PARAM)                                                              \
 	TYPE PARAM() const { return PARAM##_; }
@@ -35,6 +41,10 @@ struct Vec2
 
 	Vec2<T>(T val) { x = val, y = val; }
 
+	void zero() { x = T{0}, y = T{0}; }
+
+	T magnitute() const { return std::sqrt(x * x + y * y); }
+
 	Vec2<T>& operator=(const Vec2<T>& rhs)
 	{
 		if(this == &rhs) return *this;
@@ -44,7 +54,7 @@ struct Vec2
 		return *this;
 	}
 
-	void zero() { x = T{0}, y = T{0}; }
+	bool operator==(const Vec2<T>& rhs) const { return x == rhs.x && y == rhs.y; }
 
 #define VEC2_DEF_ARITHMETIC_OP(OP)                                                                 \
 	Vec2<T> operator OP(const Vec2<T>& rhs) const                                                  \
@@ -59,7 +69,7 @@ struct Vec2
 	VEC2_DEF_ARITHMETIC_OP(-)
 	VEC2_DEF_ARITHMETIC_OP(*)
 	VEC2_DEF_ARITHMETIC_OP(/)
-#undef DEF_ARITHMETIC_OP
+#undef VEC2_DEF_ARITHMETIC_OP
 };
 
 template <typename T>
